@@ -14,7 +14,8 @@ Clone or download the repository:
 
 ### 1. Install MSYS2 toolchain
 - Source `000-msys2.R`.  
-- This installs [MSYS2](https://www.msys2.org/) and the toolchain required to compile `dynr` models.  
+- This installs [MSYS2](https://www.msys2.org/) and the toolchain required to compile `dynr` models.
+- Runs entirely in user space — no administrator rights required.
 - **Important:** Restart R before proceeding.
 
 ### 2. Install `dynr`
