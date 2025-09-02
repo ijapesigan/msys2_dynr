@@ -1,0 +1,81 @@
+name: R (Windows minimal, CRAN binaries only)
+
+on:
+  push:
+    branches: [ main, master ]
+  pull_request:
+  workflow_dispatch:
+
+jobs:
+  run-r-scripts:
+    runs-on: windows-latest  # Windows 11/2022 image
+    env:
+      CRAN: https://cloud.r-project.org
+      # Turn ON only if you explicitly want to bootstrap MSYS2 toolchains.
+      ENABLE_MSYS2: "false"
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up R (CRAN release)
+        uses: r-lib/actions/setup-r@v2
+        with:
+          r-version: 'release'
+          Ncpus: 2
+
+      - name: Print R session info
+        shell: bash
+        run: |
+          Rscript -e "cat('R.version.string =', R.version.string, '\n')"
+          Rscript -e "capabilities()"
+
+      - name: Assert no build tools (show status only)
+        shell: bash
+        run: |
+          Rscript -e "if (!requireNamespace('pkgbuild', quietly=TRUE)) install.packages('pkgbuild', repos='${{ env.CRAN }}', type='binary')"
+          Rscript -e "pkgbuild::has_build_tools(debug = TRUE)"
+
+      # ------------------------ OPTIONAL (OFF by default) ------------------------
+      - name: (Optional) Bootstrap portable MSYS2 (no admin)
+        if: env.ENABLE_MSYS2 == 'true'
+        shell: bash
+        run: |
+          Rscript -e "source('scripts/000-msys2.R')"
+      # -------------------------------------------------------------------------
+
+      - name: Install dynr from CRAN (binary only; skip if not available)
+        shell: bash
+        run: |
+          Rscript -e "pkgs <- 'dynr'; \
+                      need <- setdiff(pkgs, rownames(installed.packages())); \
+                      if (length(need)) try(install.packages(need, repos='${{ env.CRAN }}', type='binary'), silent=TRUE); \
+                      cat('dynr installed? ', 'dynr' %in% rownames(installed.packages()), '\n')"
+
+      - name: Run 001-dynr.R (safe)
+        shell: bash
+        run: |
+          Rscript -e "try(source('scripts/001-dynr.R'), silent = TRUE)"
+
+      - name: Run 003-linear-sde.R (skip if compiler not present)
+        shell: bash
+        run: |
+          Rscript -e "if (!requireNamespace('pkgbuild', quietly=TRUE)) install.packages('pkgbuild', repos='${{ env.CRAN }}', type='binary')"
+          Rscript -e "BT <- try(pkgbuild::has_build_tools(debug = TRUE), silent = TRUE); \
+                      if (inherits(BT, 'try-error') || isFALSE(BT)) { \
+                        message('No build tools detected. Skipping 003-linear-sde.R (dynr model compile).'); \
+                      } else { \
+                        source('scripts/003-linear-sde.R'); \
+                      }"
+
+      - name: Save logs/artifacts
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: r-logs
+          path: |
+            ./*.Rout
+            ./dynr*.log
+            ./LinearSDE.c
+            ./LinearSDE.*.txt
+          if-no-files-found: ignore
