@@ -12,7 +12,7 @@ jobs:
     env:
       CRAN: https://cloud.r-project.org
       # Turn ON only if you explicitly want to bootstrap MSYS2 toolchains.
-      ENABLE_MSYS2: "false"
+      ENABLE_MSYS2: "true"
 
     steps:
       - name: Checkout
@@ -23,6 +23,7 @@ jobs:
         with:
           r-version: 'release'
           Ncpus: 2
+          rtools-version: 'none'
 
       - name: Print R session info
         shell: bash
