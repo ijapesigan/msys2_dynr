@@ -123,4 +123,4 @@ model$ub['dnoise'] <- 99
 # Estimate free parameters
 res <- dynr.cook(model, verbose = FALSE, optimization_flag = FALSE)
 # Examine results
-summary(res)
+print(summary(res))
