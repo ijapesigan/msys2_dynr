@@ -1,5 +1,8 @@
 # Setup dynr in Windows
 
+**Author:** Ivan Jacob Agaloos Pesigan  
+**Date:** September 1, 2025
+
 ## Download Repository
 
 Clone or download the repository:  
